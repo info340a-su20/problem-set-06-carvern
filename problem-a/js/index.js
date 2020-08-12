@@ -35,6 +35,14 @@ const EXAMPLE_SEARCH_RESULTS = {results:[{
 //(e.g., `EXAMPLE_SEARCH_RESULTS.results[0]).
 
 
+function renderTrack(track) {
+  let newElem = document.createElement('img'); 
+  newElem.setAttribute('src', track.artworkUrl100);
+  newElem.setAttribute('alt', track.trackName);
+  newElem.setAttribute('title', track.trackName);
+  document.querySelector("#records").appendChild(newElem);
+}
+
 
 //Define a function `renderSearchResults()` that takes in an object with a
 //`results` property containing an array of music tracks; the same format as
@@ -44,6 +52,15 @@ const EXAMPLE_SEARCH_RESULTS = {results:[{
 //"clear" the previously displayed results first!
 //
 //You can test this function by passing it the `EXAMPLE_SEARCH_RESULTS` object.
+
+function renderSearchResults(response) {
+  document.querySelector("#records").innerHTML = '';
+  if (response.results && response.results.length > 0) {
+    response.results.forEach(renderTrack);
+  } else {
+    renderError(new Error("No results found"));
+  }
+}
 
 
 
@@ -69,7 +86,24 @@ const EXAMPLE_SEARCH_RESULTS = {results:[{
 //your favorite band (you CANNOT test it with the search button yet!)
 const URL_TEMPLATE = "https://itunes.apple.com/search?entity=song&limit=25&term={searchTerm}";
 
+function fetchTrackList(searchTerm) {
+  let link = URL_TEMPLATE.substring(0,58) + searchTerm;
+  togglerSpinner();
 
+    let promise = fetch(link)
+    .then(function(response) {
+      return response.json();
+    })
+    .then(function(data) {
+      renderSearchResults(data);
+    })
+    .catch(function(err) {
+      renderError(err)
+    })
+    .then(togglerSpinner)
+    
+return promise;
+}
 
 
 //Add an event listener to the "search" button so that when it is clicked (and 
@@ -77,12 +111,26 @@ const URL_TEMPLATE = "https://itunes.apple.com/search?entity=song&limit=25&term=
 //user-entered `#searchQuery` value. Use the `preventDefault()` function to keep
 //the form from being submitted as usual (and navigating to a different page).
 
+let form = document.querySelector('form');
+form.addEventListener('submit', function() {
+  let searchTerm = document.querySelector('#searchQuery').value;
+  fetchTrackList(searchTerm);
+}); 
+
 
 
 //Next, add some error handling to the page. Define a function `renderError()`
 //that takes in an "Error object" and displays that object's `message` property
 //on the page. Display this by creating a `<p class="alert alert-danger">` and
 //placing that alert inside the `#records` element.
+
+function renderError(err) {
+  let alert = document.createElement("p");
+  alert.textContent = err.message;
+  alert.classList.add("alert");
+  alert.classList.add("alert-danger");
+  document.querySelector("#records").appendChild(alert);
+}
 
 
 
@@ -94,6 +142,8 @@ const URL_TEMPLATE = "https://itunes.apple.com/search?entity=song&limit=25&term=
 //    it an new Error object: `new Error("No results found")`
 //
 //You can test this error handling by trying to search with an empty query.
+
+
 
 
 //Finally, add a "loading spinner" as user feedback in case the download takes a
@@ -108,7 +158,10 @@ const URL_TEMPLATE = "https://itunes.apple.com/search?entity=song&limit=25&term=
 //after the ENTIRE request is completed (including after any error catching---
 //download the data and `catch()` the error, and `then()` show the spinner.
 
-
+function togglerSpinner() {
+  let spinner = document.querySelector(".fa-spinner");
+  spinner.classList.toggle("d-none");
+}
 
 
 //Optional extra: add the ability to "play" each track listing by clicking
